@@ -23,6 +23,7 @@ class MCExpr;
 class MCContext;
 class MCSubtargetInfo;
 namespace AMDGPU {
+enum GPUKind : uint8_t;
 
 struct MCKernelDescriptor {
   const MCExpr *group_segment_fixed_size = nullptr;
@@ -35,7 +36,8 @@ struct MCKernelDescriptor {
   const MCExpr *kernarg_preload = nullptr;
 
   static MCKernelDescriptor
-  getDefaultAmdhsaKernelDescriptor(const MCSubtargetInfo *STI, MCContext &Ctx);
+  getDefaultAmdhsaKernelDescriptor(const MCSubtargetInfo *STI, GPUKind AK,
+                                   MCContext &Ctx);
   // MCExpr for:
   // Dst = Dst & ~Mask
   // Dst = Dst | (Value << Shift)

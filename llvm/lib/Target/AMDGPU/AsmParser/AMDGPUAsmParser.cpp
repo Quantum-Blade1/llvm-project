@@ -6273,7 +6273,8 @@ bool AMDGPUAsmParser::ParseDirectiveAMDHSAKernel() {
 
   AMDGPU::MCKernelDescriptor KD =
       AMDGPU::MCKernelDescriptor::getDefaultAmdhsaKernelDescriptor(
-          &getSTI(), getContext());
+          &getSTI(), getTargetStreamer().getTargetID()->getGPUKind(),
+          getContext());
 
   StringSet<> Seen;
 
@@ -6446,6 +6447,10 @@ bool AMDGPUAsmParser::ParseDirectiveAMDHSAKernel() {
       EXPR_RESOLVE_OR_ERROR(EvaluatableExpr);
       if (ISA.Major < 10)
         return Error(IDRange.Start, "directive requires gfx10+", IDRange);
+      if (!hasSelectableWaveSize(
+              getTargetStreamer().getTargetID()->getGPUKind()))
+        return Error(IDRange.Start,
+                     "directive unsupported on " + getSTI().getCPU(), IDRange);
       EnableWavefrontSize32 = Val;
       PARSE_BITS_ENTRY(KD.kernel_code_properties,
                        KERNEL_CODE_PROPERTY_ENABLE_WAVEFRONT_SIZE32, ExprVal,

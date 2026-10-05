@@ -2999,7 +2999,16 @@ Expected<bool> AMDGPUDisassembler::decodeKernelDescriptorDirective(
           KERNEL_CODE_PROPERTY_ENABLE_WAVEFRONT_SIZE32,
           amdhsa::KERNEL_CODE_PROPERTIES_OFFSET, "must be zero on gfx9");
     }
-    if (isGFX10Plus()) {
+    // Reserved for wave32-only targets.
+    if (isGFX10Plus() &&
+        !AMDGPU::hasSelectableWaveSize(TargetID.getGPUKind()) &&
+        (TwoByteBuffer & KERNEL_CODE_PROPERTY_ENABLE_WAVEFRONT_SIZE32)) {
+      return createReservedKDBitsError(
+          KERNEL_CODE_PROPERTY_ENABLE_WAVEFRONT_SIZE32,
+          amdhsa::KERNEL_CODE_PROPERTIES_OFFSET,
+          "must be zero on wave32-only targets");
+    }
+    if (AMDGPU::hasSelectableWaveSize(TargetID.getGPUKind())) {
       PRINT_DIRECTIVE(".amdhsa_wavefront_size32",
                       KERNEL_CODE_PROPERTY_ENABLE_WAVEFRONT_SIZE32);
     }
@@ -3058,7 +3067,7 @@ Expected<bool> AMDGPUDisassembler::decodeKernelDescriptor(
   // accurately produce .amdhsa_next_free_vgpr, and they appear in the wrong
   // order. Workaround this by first looking up .amdhsa_wavefront_size32 here
   // when required.
-  if (isGFX10Plus()) {
+  if (AMDGPU::hasSelectableWaveSize(TargetID.getGPUKind())) {
     uint16_t KernelCodeProperties =
         support::endian::read16(&Bytes[amdhsa::KERNEL_CODE_PROPERTIES_OFFSET],
                                 llvm::endianness::little);
